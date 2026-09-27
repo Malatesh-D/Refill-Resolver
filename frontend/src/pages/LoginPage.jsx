@@ -14,7 +14,8 @@ import {
   RefreshCw,
   Sparkles,
   Building2,
-  AlertCircle
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { useAuth, DEMO_USERS } from '../context/AuthContext';
 
@@ -140,9 +141,17 @@ export default function LoginPage() {
                 Select Clinical Workspace
               </h3>
             </div>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
-              Demo Credentials
+            <span className="text-[11px] font-medium text-slate-500">
+              Instant Access
             </span>
+          </div>
+
+          {/* Disclaimer Notice */}
+          <div className="mb-4 p-3 rounded-lg bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+            <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="leading-relaxed">
+              <span className="font-semibold text-amber-950">Evaluation Disclaimer:</span> Login credential validation and MFA are bypassed for demonstration and evaluation purposes. Select any role below to launch its dedicated workspace.
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -337,8 +346,8 @@ export default function LoginPage() {
                 <label className="block text-xs font-bold text-slate-700">
                   Password
                 </label>
-                <span className="text-[11px] text-blue-600 hover:underline cursor-pointer">
-                  Demo bypass active
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Authentication bypassed for evaluation
                 </span>
               </div>
               <div className="relative">
