@@ -10,7 +10,8 @@ import {
   LogIn,
   LogOut,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Eye
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -61,48 +62,56 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Center: Sleek Segmented Role Tabs (Only inside the application after sign-in) */}
+            {/* Center: Prominently Highlighted Clinical Workspace Switcher */}
             {!isAuthOrLanding && (
-              <nav className="hidden md:flex items-center bg-slate-100/90 p-1 rounded-lg border border-slate-200 text-xs">
+              <nav className="hidden md:flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-300/80 shadow-xs gap-1.5 text-xs">
+                <div className="hidden xl:flex items-center gap-1 pl-1.5 pr-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                  <Eye className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Workspace:</span>
+                </div>
+
                 {/* 1. Practice Staff Queue */}
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${
                     persona === 'staff'
-                      ? 'bg-white text-blue-700 font-bold shadow-xs border border-slate-200/80'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30 ring-1 ring-blue-700'
+                      : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-700 border border-slate-200 shadow-2xs hover:shadow-xs'
                   }`}
                   title="Practice Staff Refill Operations Queue"
                 >
-                  <Layers className={`w-3.5 h-3.5 ${persona === 'staff' ? 'text-blue-600' : 'text-slate-500'}`} />
-                  <span>Operations Queue</span>
+                  <span className={`w-2 h-2 rounded-full ${persona === 'staff' ? 'bg-white' : 'bg-blue-600'}`}></span>
+                  <Layers className={`w-3.5 h-3.5 ${persona === 'staff' ? 'text-white' : 'text-blue-600'}`} />
+                  <span>Practice Staff</span>
                 </button>
 
                 {/* 2. Clinician / Provider Review */}
                 <button
                   onClick={() => navigate('/provider')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${
                     persona === 'provider'
-                      ? 'bg-white text-emerald-700 font-bold shadow-xs border border-slate-200/80'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                      ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/30 ring-1 ring-emerald-700'
+                      : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-emerald-700 border border-slate-200 shadow-2xs hover:shadow-xs'
                   }`}
                   title="Physician Clinical Review & Sign-Off"
                 >
-                  <Stethoscope className={`w-3.5 h-3.5 ${persona === 'provider' ? 'text-emerald-600' : 'text-slate-500'}`} />
-                  <span>Provider Review</span>
+                  <span className={`w-2 h-2 rounded-full ${persona === 'provider' ? 'bg-white' : 'bg-emerald-600'}`}></span>
+                  <Stethoscope className={`w-3.5 h-3.5 ${persona === 'provider' ? 'text-white' : 'text-emerald-600'}`} />
+                  <span>Clinician (Dr. Rao)</span>
                 </button>
 
                 {/* 3. Patient Portal */}
                 <button
                   onClick={() => navigate('/patient/PT-1042')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${
                     persona === 'patient'
-                      ? 'bg-white text-indigo-700 font-bold shadow-xs border border-slate-200/80'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30 ring-1 ring-indigo-700'
+                      : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-indigo-700 border border-slate-200 shadow-2xs hover:shadow-xs'
                   }`}
                   title="Patient Refill Status & Scheduling Portal"
                 >
-                  <User className={`w-3.5 h-3.5 ${persona === 'patient' ? 'text-indigo-600' : 'text-slate-500'}`} />
+                  <span className={`w-2 h-2 rounded-full ${persona === 'patient' ? 'bg-white' : 'bg-indigo-600'}`}></span>
+                  <User className={`w-3.5 h-3.5 ${persona === 'patient' ? 'text-white' : 'text-indigo-600'}`} />
                   <span>Patient Portal</span>
                 </button>
               </nav>
