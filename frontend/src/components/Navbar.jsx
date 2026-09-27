@@ -13,13 +13,18 @@ import {
   ChevronDown,
   Eye,
   HeartPulse,
-  ArrowRight
+  ArrowRight,
+  LogIn,
+  LogOut,
+  UserCircle
 } from 'lucide-react';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout, isAuthenticated } = useAuth();
   const [systemHealth, setSystemHealth] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
@@ -146,22 +151,66 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Right: System Status & Demo Badge */}
-            <div className="flex items-center gap-3">
+            {/* Right: User Profile, System Status & Demo Badge */}
+            <div className="flex items-center gap-2.5">
               {isLandingPage && (
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-50 text-xs font-bold transition cursor-pointer"
                 >
-                  <span>Launch Dashboard</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Portal Login</span>
+                </Link>
               )}
 
+              {/* User Station & Role Profile Pill (if logged in and not on login page) */}
+              {user && location.pathname !== '/login' ? (
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 shadow-2xs">
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-[10px] text-white shrink-0 ${
+                      user.role === 'provider'
+                        ? 'bg-emerald-600'
+                        : user.role === 'patient'
+                        ? 'bg-indigo-600'
+                        : 'bg-blue-600'
+                    }`}>
+                      {user.avatar || 'U'}
+                    </div>
+                    <div className="text-left hidden lg:block">
+                      <div className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[120px]">
+                        {user.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-semibold leading-tight">
+                        {user.roleLabel || 'Authorized'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      logout();
+                      navigate('/login');
+                    }}
+                    title="Sign out of current workstation"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : !user && location.pathname !== '/login' ? (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                </Link>
+              ) : null}
+
               {/* Demo Mode Badge */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                <span>DEMO MODE</span>
+                <span>DEMO</span>
               </div>
 
               {/* System Health Dropdown Toggle */}
@@ -170,7 +219,7 @@ export default function Navbar() {
                 className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5 transition cursor-pointer"
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                <span className="font-medium hidden sm:inline">System Status</span>
+                <span className="font-medium hidden sm:inline">Status</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
             </div>

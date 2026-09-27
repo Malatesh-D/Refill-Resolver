@@ -13,7 +13,8 @@ import {
   Building2,
   FileCheck2,
   Sparkles,
-  Zap
+  Zap,
+  LogIn
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -54,6 +55,14 @@ export default function LandingPage() {
             >
               <span>Launch Dashboard</span>
               <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => navigate('/login')}
+              className="px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm tracking-wide border border-slate-300 shadow-2xs hover:border-blue-400 flex items-center gap-2 transition cursor-pointer"
+            >
+              <LogIn className="w-4 h-4 text-blue-600" />
+              <span>Sign In to Portal</span>
             </button>
           </div>
 

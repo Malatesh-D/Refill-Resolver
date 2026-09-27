@@ -8,6 +8,9 @@ import ProviderQueuePage from './pages/ProviderQueuePage';
 import ProviderReviewPage from './pages/ProviderReviewPage';
 import PatientStatusPage from './pages/PatientStatusPage';
 
+import LoginPage from './pages/LoginPage';
+import { AuthProvider } from './context/AuthContext';
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -67,25 +70,28 @@ class ErrorBoundary extends React.Component {
 export default function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <div className="min-h-screen bg-slate-50 flex flex-col text-slate-900 font-sans">
-          <Navbar />
-          <main className="flex-1">
-            <ErrorBoundary>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/refills/:id" element={<RefillDetailPage />} />
-                <Route path="/provider" element={<ProviderQueuePage />} />
-                <Route path="/provider/refills/:id" element={<ProviderReviewPage />} />
-                <Route path="/patient" element={<PatientStatusPage />} />
-                <Route path="/patient/:patientId" element={<PatientStatusPage />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </ErrorBoundary>
-          </main>
-        </div>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <div className="min-h-screen bg-slate-50 flex flex-col text-slate-900 font-sans">
+            <Navbar />
+            <main className="flex-1">
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/refills/:id" element={<RefillDetailPage />} />
+                  <Route path="/provider" element={<ProviderQueuePage />} />
+                  <Route path="/provider/refills/:id" element={<ProviderReviewPage />} />
+                  <Route path="/patient" element={<PatientStatusPage />} />
+                  <Route path="/patient/:patientId" element={<PatientStatusPage />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </ErrorBoundary>
+            </main>
+          </div>
+        </BrowserRouter>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }
