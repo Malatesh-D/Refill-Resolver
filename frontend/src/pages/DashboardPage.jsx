@@ -94,10 +94,10 @@ export default function DashboardPage() {
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       const match =
-        r.patient_name.toLowerCase().includes(q) ||
-        r.medication.toLowerCase().includes(q) ||
-        r.patient_id.toLowerCase().includes(q) ||
-        (r.blocker_title && r.blocker_title.toLowerCase().includes(q));
+        (r.patient_name || '').toLowerCase().includes(q) ||
+        (r.medication || '').toLowerCase().includes(q) ||
+        (r.patient_id || '').toLowerCase().includes(q) ||
+        ((r.blocker_title || '')).toLowerCase().includes(q);
       if (!match) return false;
     }
 

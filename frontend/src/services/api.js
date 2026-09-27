@@ -92,32 +92,68 @@ function handleClientFallback(endpoint, options = {}) {
   }
 
   if (endpoint.startsWith('/patient/status/')) {
-    const patientId = endpoint.replace('/patient/status/', '').split('?')[0];
-    const refill = refills.find(r => r.patient_id === patientId) || refills[0];
+    const patientId = endpoint.replace('/patient/status/', '').split('?')[0].trim();
+    const refill = refills.find(r => (r.patient_id || '').toLowerCase() === patientId.toLowerCase()) || refills[0] || {};
+    
+    const isConfirmed = refill.state === 'CONFIRMED' || refill.state === 'PATIENT_NOTIFIED';
+    let statusHeadline = 'Waiting for provider review';
+    let statusExplanation = `Your refill request for ${refill.medication || 'your medication'} is currently being reviewed by ${refill.assigned_provider || 'Dr. Rao'}.`;
+    let nextStep = `Contact ${refill.pharmacy_name || 'your pharmacy'} at ${refill.pharmacy_phone || 'our office'} for updates.`;
+
+    if (isConfirmed) {
+      statusHeadline = 'Refill confirmed';
+      statusExplanation = `Your prescription has been confirmed at ${refill.pharmacy_name || 'your pharmacy'}. They will notify you when it is ready for pickup or delivery.`;
+      nextStep = `Contact ${refill.pharmacy_name || 'your pharmacy'} at ${refill.pharmacy_phone || 'the pharmacy'} for pickup details.`;
+    } else if (refill.state === 'SENT_TO_PHARMACY') {
+      statusHeadline = 'Prescription sent to pharmacy';
+      statusExplanation = `Your provider approved your refill. The prescription has been sent electronically to ${refill.pharmacy_name || 'your pharmacy'}.`;
+      nextStep = 'Pharmacy is reviewing and preparing the prescription.';
+    } else if (refill.provider_decision === 'NEEDS_VISIT') {
+      if (refill.appointment_scheduled) {
+        statusHeadline = 'Appointment confirmed';
+        statusExplanation = `Your ${refill.appointment_type || 'consultation'} has been scheduled with ${refill.assigned_provider || 'Dr. Rao'} for ${refill.appointment_date} at ${refill.appointment_time}.`;
+        nextStep = `Join your ${refill.appointment_type || 'consultation'} on ${refill.appointment_date}. A confirmation link has been sent to your portal.`;
+      } else {
+        statusHeadline = 'Office visit requested';
+        statusExplanation = 'Your provider requires an in-person or telehealth visit before refilling this prescription.';
+        nextStep = 'Please select a date and time below to schedule your appointment with your doctor.';
+      }
+    } else if (refill.provider_decision === 'DENY') {
+      statusHeadline = 'Prescription renewal not approved';
+      statusExplanation = 'Your clinician reviewed this refill request and determined a clinical follow-up is necessary.';
+      nextStep = 'Please call our office to discuss alternative therapies or schedule a consultation.';
+    } else if (refill.prior_auth_status === 'PA_REQUIRED') {
+      statusHeadline = 'Awaiting insurance coverage approval';
+      statusExplanation = `Your clinic is submitting required Prior Authorization paperwork to your insurance plan (${refill.insurance_provider || 'your insurance'}) so your medication is covered.`;
+      nextStep = 'No action needed from you. We will update you as soon as your insurance responds.';
+    } else if (refill.state === 'INFO_GATHERING') {
+      statusHeadline = 'Information needed';
+      statusExplanation = refill.missing_info_note || 'We are gathering additional context (such as recent vitals or lab confirmation) needed to safely process your refill.';
+      nextStep = 'Our office staff may reach out to you, or you can send recent readings through the patient portal.';
+    }
+
     return {
-      refill_id: refill.id,
-      patient_id: refill.patient_id,
-      patient_name: refill.patient_name,
-      medication: refill.medication,
-      dosage: refill.dosage,
-      status_headline: refill.state === 'PATIENT_NOTIFIED' ? 'Refill confirmed' : 'Refill in review',
-      status_explanation: refill.state === 'PATIENT_NOTIFIED'
-        ? `Your prescription has been confirmed at ${refill.pharmacy_name}.`
-        : `Your refill request is currently being processed by ${refill.assigned_provider || 'Dr. Rao'}.`,
-      next_step: `Contact ${refill.pharmacy_name} at ${refill.pharmacy_phone} for pickup details.`,
+      refill_id: refill.id || 'REF-1001',
+      patient_id: refill.patient_id || patientId || 'PT-1001',
+      patient_name: refill.patient_name || 'Patient',
+      medication: refill.medication || 'Prescription',
+      dosage: refill.dosage || '',
+      status_headline: statusHeadline,
+      status_explanation: statusExplanation,
+      next_step: nextStep,
       last_updated: 'Just now',
-      is_confirmed: refill.state === 'PATIENT_NOTIFIED',
-      state: refill.state,
-      provider_decision: refill.provider_decision,
+      is_confirmed: isConfirmed,
+      state: refill.state || 'TRIAGED',
+      provider_decision: refill.provider_decision || null,
       assigned_provider: refill.assigned_provider || 'Dr. Rao',
-      provider_note: refill.provider_note,
-      appointment_scheduled: refill.appointment_scheduled,
-      appointment_date: refill.appointment_date,
-      appointment_time: refill.appointment_time,
-      appointment_type: refill.appointment_type,
-      appointment_notes: refill.appointment_notes,
-      insurance_provider: refill.insurance_provider,
-      prior_auth_status: refill.prior_auth_status
+      provider_note: refill.provider_note || null,
+      appointment_scheduled: Boolean(refill.appointment_scheduled),
+      appointment_date: refill.appointment_date || null,
+      appointment_time: refill.appointment_time || null,
+      appointment_type: refill.appointment_type || null,
+      appointment_notes: refill.appointment_notes || null,
+      insurance_provider: refill.insurance_provider || 'Insurance Provider',
+      prior_auth_status: refill.prior_auth_status || 'NOT_REQUIRED'
     };
   }
 

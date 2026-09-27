@@ -68,34 +68,36 @@ export default function AuditTimeline({ events = [] }) {
   };
 
   const getActorBadge = (actor) => {
-    if (actor.toLowerCase().includes('ai')) {
+    const safeActor = actor || 'System';
+    const lower = safeActor.toLowerCase();
+    if (lower.includes('ai')) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
           <Bot className="w-3 h-3 text-indigo-600" />
-          {actor}
+          {safeActor}
         </span>
       );
     }
-    if (actor.toLowerCase().includes('dr.') || actor.toLowerCase().includes('clinician') || actor.toLowerCase().includes('provider')) {
+    if (lower.includes('dr.') || lower.includes('clinician') || lower.includes('provider')) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
           <ShieldCheck className="w-3 h-3 text-emerald-600" />
-          {actor}
+          {safeActor}
         </span>
       );
     }
-    if (actor.toLowerCase().includes('pharmacy')) {
+    if (lower.includes('pharmacy')) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
           <Building2 className="w-3 h-3 text-purple-600" />
-          {actor}
+          {safeActor}
         </span>
       );
     }
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
         <User className="w-3 h-3 text-slate-500" />
-        {actor}
+        {safeActor}
       </span>
     );
   };

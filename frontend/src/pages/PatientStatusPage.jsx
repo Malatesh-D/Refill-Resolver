@@ -221,7 +221,7 @@ export default function PatientStatusPage() {
 
             {/* Interactive Appointment Scheduling Section */}
             {(statusData.provider_decision === 'NEEDS_VISIT' ||
-              statusData.status_headline.toLowerCase().includes('visit') ||
+              (statusData.status_headline || '').toLowerCase().includes('visit') ||
               statusData.appointment_scheduled) && (
               <div className="pt-2">
                 <AppointmentScheduler
@@ -233,7 +233,7 @@ export default function PatientStatusPage() {
 
             {/* Optional Scheduler for Any Refill */}
             {!(statusData.provider_decision === 'NEEDS_VISIT' ||
-              statusData.status_headline.toLowerCase().includes('visit') ||
+              (statusData.status_headline || '').toLowerCase().includes('visit') ||
               statusData.appointment_scheduled) && (
               <div className="pt-2">
                 {!showGeneralScheduler ? (
