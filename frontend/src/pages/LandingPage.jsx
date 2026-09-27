@@ -132,7 +132,7 @@ export default function LandingPage() {
             <span>• Healthcare Workflow Orchestration Architecture</span>
           </div>
           <p className="text-slate-400">
-            Hackathon MVP • AI Safety Guardrails Active • Clinical Decision Authority Preserved
+            AI Safety Guardrails Active • Clinical Decision Authority Preserved
           </p>
         </div>
       </footer>
