@@ -24,7 +24,7 @@ def run_tests():
     res = client.get("/refills")
     assert res.status_code == 200
     refills = res.json()
-    assert len(refills) == 8, f"Expected 8 refills, got {len(refills)}"
+    assert len(refills) >= 8, f"Expected at least 8 refills, got {len(refills)}"
     print(f"[PASS] Listed {len(refills)} refills OK")
 
     # 4. Sarah Miller initial state

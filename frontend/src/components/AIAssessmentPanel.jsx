@@ -41,7 +41,7 @@ const GUARDRAILS = [
     check: () => true,
     detailFn: (r) => r.is_fallback
       ? 'Fallback Mode: Clinical rules engine active (LLM API unavailable). Triage remains deterministic and auditable.'
-      : 'Claude 3.5 Sonnet: LLM triage active. Fallback rules engine standing by.'
+      : 'Live LLM Active (Google Gemini / Claude): AI triage active. Fallback rules engine standing by.'
   },
   {
     id: 'G6',

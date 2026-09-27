@@ -216,21 +216,75 @@ def deterministic_triage_fallback(refill_data: Dict[str, Any], reason_note: str 
     )
     return apply_hard_guardrails(result, refill_data)
 
-async def run_ai_triage(refill_data: Dict[str, Any]) -> AITriageResult:
-    """
-    Perform AI triage using Anthropic Claude API if configured,
-    or smoothly fallback to deterministic clinical rules.
-    """
-    api_key = os.getenv("ANTHROPIC_API_KEY")
+async def call_gemini_triage(api_key: str, refill_data: Dict[str, Any]) -> AITriageResult:
+    import httpx
+    prompt_payload = {
+        "task": "Prescription Refill Workflow Triage & Block Identification",
+        "instructions": (
+            "You are an AI clinical workflow triage assistant. Analyze this prescription refill request. "
+            "Identify why it is blocked, assign an operational triage lane (AUTO_CLEAR, NEEDS_INFO, or NEEDS_PROVIDER), "
+            "provide reasoning bullets, recommend a workflow action, and draft a concise notification message. "
+            "SAFETY MANDATE: You CANNOT prescribe, modify dosage, or approve medication. Only licensed providers have clinical prescribing authority."
+        ),
+        "refill_request": {
+            "patient_name": refill_data.get("patient_name"),
+            "medication": refill_data.get("medication"),
+            "dosage": refill_data.get("dosage"),
+            "condition": refill_data.get("condition"),
+            "refills_remaining": refill_data.get("refills_remaining"),
+            "last_visit_date": refill_data.get("last_visit_date"),
+            "last_vitals_summary": refill_data.get("last_vitals_summary"),
+            "clinical_flag": refill_data.get("clinical_flag")
+        },
+        "output_format": {
+            "lane": "NEEDS_PROVIDER | NEEDS_INFO | AUTO_CLEAR",
+            "confidence": 0.95,
+            "reasoning": ["Bullet 1", "Bullet 2"],
+            "recommended_action": "Route to prescribing provider for authorization.",
+            "draft_message": "Draft message for provider or patient."
+        }
+    }
 
-    if not api_key:
-        logger.info("ANTHROPIC_API_KEY not configured. Using deterministic clinical triage fallback.")
-        return deterministic_triage_fallback(
-            refill_data,
-            reason_note="AI provider not configured. Deterministic healthcare workflow rules applied."
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    body = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": f"You are a specialized healthcare workflow triage engine. Respond ONLY in valid JSON conforming to the requested schema.\n\n{json.dumps(prompt_payload)}"
+                    }
+                ]
+            }
+        ],
+        "generationConfig": {
+            "response_mime_type": "application/json",
+            "temperature": 0.1
+        }
+    }
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(url, json=body)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        candidates = data.get("candidates", [])
+        if not candidates:
+            raise ValueError("No response candidates returned by Gemini API")
+            
+        content_text = candidates[0]["content"]["parts"][0]["text"].strip()
+        parsed = json.loads(content_text)
+        
+        triage = AITriageResult(
+            lane=parsed.get("lane", "NEEDS_PROVIDER"),
+            confidence=float(parsed.get("confidence", 0.95)),
+            reasoning=parsed.get("reasoning", []),
+            recommended_action=parsed.get("recommended_action", "Route to provider"),
+            draft_message=parsed.get("draft_message", ""),
+            is_fallback=False
         )
+        return apply_hard_guardrails(triage, refill_data)
 
-    # If API key is present, attempt Claude API call
+async def call_claude_triage(api_key: str, refill_data: Dict[str, Any]) -> AITriageResult:
     prompt_payload = {
         "task": "Prescription Refill Workflow Triage & Block Identification",
         "instructions": (
@@ -258,39 +312,60 @@ async def run_ai_triage(refill_data: Dict[str, Any]) -> AITriageResult:
         }
     }
 
-    try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
-        response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
-            max_tokens=1000,
-            temperature=0.1,
-            system="You are a specialized healthcare workflow triage engine. Respond ONLY in valid JSON conforming to the requested schema.",
-            messages=[
-                {"role": "user", "content": json.dumps(prompt_payload)}
-            ]
-        )
-        content_text = response.content[0].text.strip()
-        # Clean potential markdown fences
-        if content_text.startswith("```json"):
-            content_text = content_text[7:]
-        if content_text.endswith("```"):
-            content_text = content_text[:-3]
-        
-        parsed = json.loads(content_text.strip())
-        triage = AITriageResult(
-            lane=parsed.get("lane", "NEEDS_PROVIDER"),
-            confidence=float(parsed.get("confidence", 0.85)),
-            reasoning=parsed.get("reasoning", []),
-            recommended_action=parsed.get("recommended_action", "Route to provider"),
-            draft_message=parsed.get("draft_message", ""),
-            is_fallback=False
-        )
-        return apply_hard_guardrails(triage, refill_data)
-        
-    except Exception as e:
-        logger.warning(f"AI API request failed or returned invalid response: {e}. Executing deterministic fallback.")
-        return deterministic_triage_fallback(
-            refill_data,
-            reason_note=f"AI unavailable ({type(e).__name__}). Request routed to manual review."
-        )
+    import anthropic
+    client = anthropic.Anthropic(api_key=api_key)
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1000,
+        temperature=0.1,
+        system="You are a specialized healthcare workflow triage engine. Respond ONLY in valid JSON conforming to the requested schema.",
+        messages=[
+            {"role": "user", "content": json.dumps(prompt_payload)}
+        ]
+    )
+    content_text = response.content[0].text.strip()
+    if content_text.startswith("```json"):
+        content_text = content_text[7:]
+    if content_text.endswith("```"):
+        content_text = content_text[:-3]
+    
+    parsed = json.loads(content_text.strip())
+    triage = AITriageResult(
+        lane=parsed.get("lane", "NEEDS_PROVIDER"),
+        confidence=float(parsed.get("confidence", 0.85)),
+        reasoning=parsed.get("reasoning", []),
+        recommended_action=parsed.get("recommended_action", "Route to provider"),
+        draft_message=parsed.get("draft_message", ""),
+        is_fallback=False
+    )
+    return apply_hard_guardrails(triage, refill_data)
+
+async def run_ai_triage(refill_data: Dict[str, Any]) -> AITriageResult:
+    """
+    Perform AI triage using Google Gemini API or Anthropic Claude API if configured,
+    or smoothly fallback to deterministic clinical rules.
+    """
+    # 1. Check for Google Gemini API Key
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_GENAI_API_KEY")
+    if gemini_key and gemini_key.strip() and not gemini_key.startswith("your_"):
+        try:
+            logger.info("Executing AI triage using Google Gemini API (gemini-1.5-flash)...")
+            return await call_gemini_triage(gemini_key.strip(), refill_data)
+        except Exception as e:
+            logger.warning(f"Google Gemini API failed ({type(e).__name__}: {e}). Trying secondary or fallback.")
+
+    # 2. Check for Anthropic Claude API Key
+    claude_key = os.getenv("ANTHROPIC_API_KEY")
+    if claude_key and claude_key.strip() and not claude_key.startswith("your_"):
+        try:
+            logger.info("Executing AI triage using Anthropic Claude API...")
+            return await call_claude_triage(claude_key.strip(), refill_data)
+        except Exception as e:
+            logger.warning(f"Anthropic Claude API failed ({type(e).__name__}: {e}). Falling back.")
+
+    # 3. Deterministic Healthcare Workflow Fallback
+    logger.info("Live AI API key not configured or call failed. Using deterministic clinical triage fallback.")
+    return deterministic_triage_fallback(
+        refill_data,
+        reason_note="Deterministic clinical workflow rules applied."
+    )
