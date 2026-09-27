@@ -9,7 +9,7 @@ import ProviderReviewPage from './pages/ProviderReviewPage';
 import PatientStatusPage from './pages/PatientStatusPage';
 
 import LoginPage from './pages/LoginPage';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -52,11 +52,11 @@ class ErrorBoundary extends React.Component {
               </button>
               <button
                 onClick={() => {
-                  window.location.href = '/dashboard';
+                  window.location.href = '/login';
                 }}
                 className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white font-bold text-xs"
               >
-                Return to Dashboard
+                Return to Login
               </button>
             </div>
           </div>
@@ -65,6 +65,32 @@ class ErrorBoundary extends React.Component {
     }
     return this.props.children;
   }
+}
+
+/**
+ * Strict Role-Based Route Guard:
+ * Ensures a patient only sees the patient portal,
+ * a provider only sees provider reviews,
+ * and practice staff only sees staff operations.
+ */
+function RoleRoute({ allowedRoles, children }) {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!allowedRoles.includes(user.role)) {
+    if (user.role === 'provider') {
+      return <Navigate to="/provider" replace />;
+    }
+    if (user.role === 'patient') {
+      return <Navigate to={`/patient/${user.patientId || 'PT-1042'}`} replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
 }
 
 export default function App() {
@@ -77,14 +103,65 @@ export default function App() {
             <main className="flex-1">
               <ErrorBoundary>
                 <Routes>
+                  {/* Public Pages */}
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<LoginPage />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/refills/:id" element={<RefillDetailPage />} />
-                  <Route path="/provider" element={<ProviderQueuePage />} />
-                  <Route path="/provider/refills/:id" element={<ProviderReviewPage />} />
-                  <Route path="/patient" element={<PatientStatusPage />} />
-                  <Route path="/patient/:patientId" element={<PatientStatusPage />} />
+
+                  {/* Practice Staff Only Routes */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <RoleRoute allowedRoles={['staff']}>
+                        <DashboardPage />
+                      </RoleRoute>
+                    }
+                  />
+                  <Route
+                    path="/refills/:id"
+                    element={
+                      <RoleRoute allowedRoles={['staff']}>
+                        <RefillDetailPage />
+                      </RoleRoute>
+                    }
+                  />
+
+                  {/* Clinician / Provider Only Routes */}
+                  <Route
+                    path="/provider"
+                    element={
+                      <RoleRoute allowedRoles={['provider']}>
+                        <ProviderQueuePage />
+                      </RoleRoute>
+                    }
+                  />
+                  <Route
+                    path="/provider/refills/:id"
+                    element={
+                      <RoleRoute allowedRoles={['provider']}>
+                        <ProviderReviewPage />
+                      </RoleRoute>
+                    }
+                  />
+
+                  {/* Patient Only Routes */}
+                  <Route
+                    path="/patient"
+                    element={
+                      <RoleRoute allowedRoles={['patient']}>
+                        <PatientStatusPage />
+                      </RoleRoute>
+                    }
+                  />
+                  <Route
+                    path="/patient/:patientId"
+                    element={
+                      <RoleRoute allowedRoles={['patient']}>
+                        <PatientStatusPage />
+                      </RoleRoute>
+                    }
+                  />
+
+                  {/* Fallback */}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </ErrorBoundary>
