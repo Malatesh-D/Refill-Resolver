@@ -42,79 +42,128 @@ export default function Navbar() {
   const isAuthOrLanding = isLandingPage || isLoginPage;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-2xs">
+    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between py-2.5 min-h-[82px]">
           
           {/* Left: Brand Logo & Title */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-5 lg:gap-8">
             <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs group-hover:bg-blue-700 transition">
-                <RefreshCw className="w-4 h-4 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30 group-hover:bg-blue-700 transition">
+                <RefreshCw className="w-5 h-5 text-white" />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-slate-900 tracking-tight text-base">
-                  REFILL RESOLVE
-                </span>
-                <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                  CLINICAL
-                </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-slate-900 tracking-tight text-xl">
+                    REFILL RESOLVE
+                  </span>
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    B2B RX
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 hidden sm:block font-medium">
+                  From stuck refill to resolved refill.
+                </p>
               </div>
             </Link>
 
-            {/* Center: Prominently Highlighted Clinical Workspace Switcher */}
+            {/* Center: Prominently Highlighted & Big Workspace Switcher */}
             {!isAuthOrLanding && (
-              <nav className="hidden md:flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-300/80 shadow-xs gap-1.5 text-xs">
-                <div className="hidden xl:flex items-center gap-1 pl-1.5 pr-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                  <Eye className="w-3.5 h-3.5 text-blue-600" />
+              <div className="hidden md:flex items-center gap-2">
+                <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 text-xs font-black uppercase tracking-wider text-slate-600 border border-slate-200">
+                  <Eye className="w-4 h-4 text-blue-600" />
                   <span>Workspace:</span>
                 </div>
 
-                {/* 1. Practice Staff Queue */}
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${
-                    persona === 'staff'
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30 ring-1 ring-blue-700'
-                      : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-700 border border-slate-200 shadow-2xs hover:shadow-xs'
-                  }`}
-                  title="Practice Staff Refill Operations Queue"
-                >
-                  <span className={`w-2 h-2 rounded-full ${persona === 'staff' ? 'bg-white' : 'bg-blue-600'}`}></span>
-                  <Layers className={`w-3.5 h-3.5 ${persona === 'staff' ? 'text-white' : 'text-blue-600'}`} />
-                  <span>Practice Staff</span>
-                </button>
+                <nav className="flex items-center bg-slate-100/90 p-1.5 rounded-2xl border border-slate-300 shadow-xs gap-2">
+                  {/* 1. Practice Staff Tab */}
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-150 cursor-pointer ${
+                      persona === 'staff'
+                        ? 'bg-blue-600 text-white font-extrabold shadow-md shadow-blue-600/35 ring-2 ring-blue-700'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-700 font-semibold border border-slate-200 shadow-xs hover:shadow-sm'
+                    }`}
+                    title="Practice Staff Refill Operations Queue"
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition shrink-0 ${
+                      persona === 'staff'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
+                    }`}>
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs sm:text-sm font-black block leading-tight">
+                        Practice Staff
+                      </span>
+                      <span className={`text-[10px] font-bold block leading-tight ${
+                        persona === 'staff' ? 'text-blue-100' : 'text-slate-400'
+                      }`}>
+                        Command Center
+                      </span>
+                    </div>
+                  </button>
 
-                {/* 2. Clinician / Provider Review */}
-                <button
-                  onClick={() => navigate('/provider')}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${
-                    persona === 'provider'
-                      ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/30 ring-1 ring-emerald-700'
-                      : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-emerald-700 border border-slate-200 shadow-2xs hover:shadow-xs'
-                  }`}
-                  title="Physician Clinical Review & Sign-Off"
-                >
-                  <span className={`w-2 h-2 rounded-full ${persona === 'provider' ? 'bg-white' : 'bg-emerald-600'}`}></span>
-                  <Stethoscope className={`w-3.5 h-3.5 ${persona === 'provider' ? 'text-white' : 'text-emerald-600'}`} />
-                  <span>Clinician (Dr. Rao)</span>
-                </button>
+                  {/* 2. Clinician / Provider Tab */}
+                  <button
+                    onClick={() => navigate('/provider')}
+                    className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-150 cursor-pointer ${
+                      persona === 'provider'
+                        ? 'bg-emerald-600 text-white font-extrabold shadow-md shadow-emerald-600/35 ring-2 ring-emerald-700'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-emerald-700 font-semibold border border-slate-200 shadow-xs hover:shadow-sm'
+                    }`}
+                    title="Physician Clinical Review & Sign-Off"
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition shrink-0 ${
+                      persona === 'provider'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'
+                    }`}>
+                      <Stethoscope className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs sm:text-sm font-black block leading-tight">
+                        Clinician / Provider
+                      </span>
+                      <span className={`text-[10px] font-bold block leading-tight ${
+                        persona === 'provider' ? 'text-emerald-100' : 'text-slate-400'
+                      }`}>
+                        Dr. Rao Review
+                      </span>
+                    </div>
+                  </button>
 
-                {/* 3. Patient Portal */}
-                <button
-                  onClick={() => navigate('/patient/PT-1042')}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${
-                    persona === 'patient'
-                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30 ring-1 ring-indigo-700'
-                      : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-indigo-700 border border-slate-200 shadow-2xs hover:shadow-xs'
-                  }`}
-                  title="Patient Refill Status & Scheduling Portal"
-                >
-                  <span className={`w-2 h-2 rounded-full ${persona === 'patient' ? 'bg-white' : 'bg-indigo-600'}`}></span>
-                  <User className={`w-3.5 h-3.5 ${persona === 'patient' ? 'text-white' : 'text-indigo-600'}`} />
-                  <span>Patient Portal</span>
-                </button>
-              </nav>
+                  {/* 3. Patient View Tab */}
+                  <button
+                    onClick={() => navigate('/patient/PT-1042')}
+                    className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-150 cursor-pointer ${
+                      persona === 'patient'
+                        ? 'bg-indigo-600 text-white font-extrabold shadow-md shadow-indigo-600/35 ring-2 ring-indigo-700'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-indigo-700 font-semibold border border-slate-200 shadow-xs hover:shadow-sm'
+                    }`}
+                    title="Patient Refill Status & Scheduling Portal"
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition shrink-0 ${
+                      persona === 'patient'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100'
+                    }`}>
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs sm:text-sm font-black block leading-tight">
+                        Patient View
+                      </span>
+                      <span className={`text-[10px] font-bold block leading-tight ${
+                        persona === 'patient' ? 'text-indigo-100' : 'text-slate-400'
+                      }`}>
+                        Track & Schedule
+                      </span>
+                    </div>
+                  </button>
+                </nav>
+              </div>
             )}
           </div>
 
