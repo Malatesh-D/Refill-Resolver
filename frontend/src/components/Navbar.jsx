@@ -158,8 +158,8 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Authenticated Station Profile (Visible when logged in and not on login page) */}
-            {user && !isLoginPage && (
+            {/* Authenticated Station Profile (Visible inside active workspaces, hidden on landing and login pages) */}
+            {user && !isAuthOrLanding && (
               <div className="flex items-center gap-2 sm:gap-3">
                 
                 {/* User Identity Pill */}
