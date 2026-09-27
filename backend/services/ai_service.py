@@ -245,7 +245,8 @@ async def call_gemini_triage(api_key: str, refill_data: Dict[str, Any]) -> AITri
         }
     }
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
     body = {
         "contents": [
             {
