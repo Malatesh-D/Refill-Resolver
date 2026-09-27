@@ -131,17 +131,17 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl px-4 sm:px-0">
         
-        {/* Quick Demo Login Cards (Evaluator Friendly) */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+        {/* Quick Workspace Switcher Cards */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-5 mb-5">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                1-Click Quick Demo Access (For Evaluators)
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Select Clinical Workspace
               </h3>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-              Instant Authorization
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+              Demo Credentials
             </span>
           </div>
 
