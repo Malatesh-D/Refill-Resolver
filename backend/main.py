@@ -56,12 +56,21 @@ def startup_event():
 
 @app.get("/health")
 def health_check():
-    api_key_configured = bool(os.getenv("ANTHROPIC_API_KEY"))
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    claude_key = os.getenv("ANTHROPIC_API_KEY")
+    
+    if gemini_key and not gemini_key.startswith("your_"):
+        ai_status = "operational (Google Gemini 2.5 Flash)"
+    elif claude_key and not claude_key.startswith("your_"):
+        ai_status = "operational (Claude API)"
+    else:
+        ai_status = "operational (Deterministic Fallback Mode)"
+
     return {
         "status": "operational",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "services": {
-            "ai_triage": "operational (Claude API)" if api_key_configured else "operational (Deterministic Fallback Mode)",
+            "ai_triage": ai_status,
             "workflow_engine": "operational",
             "pharmacy_gateway": "operational (Mock SCRIPT Gateway)",
             "database": "operational (SQLite)"
