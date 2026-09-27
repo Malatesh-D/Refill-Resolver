@@ -43,6 +43,8 @@ export default function Navbar() {
 
   const persona = getActivePersona();
   const isLandingPage = location.pathname === '/';
+  const isLoginPage = location.pathname === '/login';
+  const isAuthOrLanding = isLandingPage || isLoginPage;
 
   return (
     <>
@@ -69,8 +71,8 @@ export default function Navbar() {
                 </div>
               </Link>
 
-              {/* High-Visibility Evaluator Persona Navigation Switcher (Hidden on Landing Page) */}
-              {!isLandingPage && (
+              {/* High-Visibility Evaluator Persona Navigation Switcher (Hidden on Landing and Login Pages) */}
+              {!isAuthOrLanding && (
                 <div className="hidden md:flex items-center gap-2">
                   <div className="hidden xl:flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 text-[11px] font-extrabold uppercase tracking-wider text-slate-600 border border-slate-200">
                     <Eye className="w-3.5 h-3.5 text-blue-600" />
@@ -277,8 +279,8 @@ export default function Navbar() {
         )}
       </header>
 
-      {/* Subheader: Persona Banner with Dynamic Persona Indicators (Hidden on Landing Page) */}
-      {!isLandingPage && (
+      {/* Subheader: Persona Banner with Dynamic Persona Indicators (Hidden on Landing and Login Pages) */}
+      {!isAuthOrLanding && (
         <div className="bg-slate-900 text-slate-100 text-xs py-2 px-4 border-b border-slate-800">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
