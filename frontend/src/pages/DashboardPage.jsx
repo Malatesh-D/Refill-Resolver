@@ -88,6 +88,18 @@ export default function DashboardPage() {
     }
   };
 
+  const isRefillResolved = (r) => {
+    return Boolean(
+      r.state === 'PATIENT_NOTIFIED' ||
+      r.state === 'CONFIRMED' ||
+      r.provider_decision === 'DENY' ||
+      r.provider_decision === 'APPROVE' ||
+      r.appointment_scheduled ||
+      r.owner === 'Completed' ||
+      r.owner === 'Closed'
+    );
+  };
+
   // Filter queues
   const filterRefill = (r) => {
     // Search match
@@ -101,23 +113,23 @@ export default function DashboardPage() {
       if (!match) return false;
     }
 
+    if (selectedQueue === 'recently_resolved') {
+      return isRefillResolved(r);
+    }
     if (selectedQueue === 'needs_review') {
-      return r.state === 'PROVIDER_REVIEW';
+      return r.state === 'PROVIDER_REVIEW' && !isRefillResolved(r);
     }
     if (selectedQueue === 'ready_for_provider') {
-      return r.state === 'TRIAGED' && (r.lane === 'NEEDS_PROVIDER' || r.lane === 'AUTO_CLEAR');
+      return r.state === 'TRIAGED' && (r.lane === 'NEEDS_PROVIDER' || r.lane === 'AUTO_CLEAR') && !isRefillResolved(r);
     }
     if (selectedQueue === 'needs_info') {
-      return r.state === 'INFO_GATHERING' || (r.state === 'TRIAGED' && r.lane === 'NEEDS_INFO');
+      return (r.state === 'INFO_GATHERING' || (r.state === 'TRIAGED' && r.lane === 'NEEDS_INFO')) && !isRefillResolved(r);
     }
     if (selectedQueue === 'urgent_stalled') {
-      return r.priority === 'URGENT' || r.is_stalled || r.sla_status === 'BREACHED' || r.sla_status === 'AT_RISK';
+      return !isRefillResolved(r) && (r.priority === 'URGENT' || r.is_stalled || r.sla_status === 'BREACHED' || r.sla_status === 'AT_RISK');
     }
     if (selectedQueue === 'prior_auth') {
       return r.prior_auth_status === 'PA_REQUIRED' || r.prior_auth_status === 'APPROVED';
-    }
-    if (selectedQueue === 'recently_resolved') {
-      return r.state === 'PATIENT_NOTIFIED';
     }
     return true; // 'all'
   };
@@ -126,12 +138,12 @@ export default function DashboardPage() {
 
   // Grouped counts for badges
   const counts = {
-    needs_review: refills.filter(r => r.state === 'PROVIDER_REVIEW').length,
-    needs_info: refills.filter(r => r.state === 'INFO_GATHERING' || (r.state === 'TRIAGED' && r.lane === 'NEEDS_INFO')).length,
-    ready_for_provider: refills.filter(r => r.state === 'TRIAGED' && (r.lane === 'NEEDS_PROVIDER' || r.lane === 'AUTO_CLEAR')).length,
-    urgent_stalled: refills.filter(r => r.priority === 'URGENT' || r.is_stalled || r.sla_status === 'BREACHED' || r.sla_status === 'AT_RISK').length,
+    needs_review: refills.filter(r => r.state === 'PROVIDER_REVIEW' && !isRefillResolved(r)).length,
+    needs_info: refills.filter(r => (r.state === 'INFO_GATHERING' || (r.state === 'TRIAGED' && r.lane === 'NEEDS_INFO')) && !isRefillResolved(r)).length,
+    ready_for_provider: refills.filter(r => r.state === 'TRIAGED' && (r.lane === 'NEEDS_PROVIDER' || r.lane === 'AUTO_CLEAR') && !isRefillResolved(r)).length,
+    urgent_stalled: refills.filter(r => !isRefillResolved(r) && (r.priority === 'URGENT' || r.is_stalled || r.sla_status === 'BREACHED' || r.sla_status === 'AT_RISK')).length,
     prior_auth: refills.filter(r => r.prior_auth_status === 'PA_REQUIRED' || r.prior_auth_status === 'APPROVED').length,
-    recently_resolved: refills.filter(r => r.state === 'PATIENT_NOTIFIED').length,
+    recently_resolved: refills.filter(isRefillResolved).length,
   };
 
   return (
@@ -432,8 +444,12 @@ export default function DashboardPage() {
                       {/* Blocker & Next Best Action */}
                       <td className="py-4 px-4 max-w-sm">
                         <div className="flex items-start gap-1.5">
-                          {refill.state === 'PATIENT_NOTIFIED' ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          {isRefillResolved(refill) ? (
+                            refill.provider_decision === 'DENY' ? (
+                              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                            ) : (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                            )
                           ) : refill.lane === 'NEEDS_INFO' ? (
                             <HelpCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                           ) : (
@@ -446,7 +462,7 @@ export default function DashboardPage() {
                             <span className="text-[11px] text-slate-500 leading-tight block">
                               {refill.blocker_description}
                             </span>
-                            {refill.recommended_action && refill.state !== 'PATIENT_NOTIFIED' && (
+                            {refill.recommended_action && !isRefillResolved(refill) && (
                               <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                                 <span className="font-bold">Next Best Action:</span>
                                 <span className="truncate max-w-[220px]">{refill.recommended_action}</span>
@@ -459,7 +475,9 @@ export default function DashboardPage() {
                       {/* State */}
                       <td className="py-4 px-4">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
-                          refill.state === 'PATIENT_NOTIFIED'
+                          refill.provider_decision === 'DENY'
+                            ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                            : refill.state === 'PATIENT_NOTIFIED'
                             ? 'bg-emerald-100 text-emerald-800'
                             : refill.state === 'SENT_TO_PHARMACY'
                             ? 'bg-blue-100 text-blue-800'
@@ -469,7 +487,7 @@ export default function DashboardPage() {
                             ? 'bg-orange-100 text-orange-800'
                             : 'bg-slate-100 text-slate-800'
                         }`}>
-                          {refill.state}
+                          {refill.provider_decision === 'DENY' ? 'DENIED' : refill.state}
                         </span>
                       </td>
 

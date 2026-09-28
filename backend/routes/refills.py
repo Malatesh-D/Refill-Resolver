@@ -87,26 +87,34 @@ def serialize_refill(refill: RefillRequest) -> dict:
         "audit_events": events
     }
 
+def is_refill_resolved(r) -> bool:
+    return (
+        r.state in ["PATIENT_NOTIFIED", "CONFIRMED"] or
+        r.provider_decision in ["DENY", "APPROVE"] or
+        getattr(r, "owner", "") in ["Completed", "Closed"] or
+        bool(getattr(r, "appointment_scheduled", False))
+    )
+
 @router.get("/metrics", response_model=DashboardMetrics)
 def get_dashboard_metrics(db: Session = Depends(get_db)):
     all_refills = db.query(RefillRequest).all()
     
-    active_refills = [r for r in all_refills if r.state != "PATIENT_NOTIFIED" and r.provider_decision != "DENY"]
-    needs_provider = [r for r in all_refills if r.state in ["PROVIDER_REVIEW", "TRIAGED"] and r.lane in ["NEEDS_PROVIDER", "AUTO_CLEAR"]]
-    needs_information = [r for r in all_refills if r.state == "INFO_GATHERING" or r.lane == "NEEDS_INFO"]
-    resolved_today = [r for r in all_refills if r.state == "PATIENT_NOTIFIED"]
+    resolved_today = [r for r in all_refills if is_refill_resolved(r)]
+    active_refills = [r for r in all_refills if not is_refill_resolved(r)]
+    needs_provider = [r for r in active_refills if r.state in ["PROVIDER_REVIEW", "TRIAGED"] and r.lane in ["NEEDS_PROVIDER", "AUTO_CLEAR"]]
+    needs_information = [r for r in active_refills if r.state == "INFO_GATHERING" or r.lane == "NEEDS_INFO"]
 
     queue_counts = {
-        "needs_review": len([r for r in all_refills if r.state == "PROVIDER_REVIEW"]),
-        "needs_info": len([r for r in all_refills if r.state == "INFO_GATHERING" or (r.state == "TRIAGED" and r.lane == "NEEDS_INFO")]),
-        "ready_for_provider": len([r for r in all_refills if r.state == "TRIAGED" and r.lane in ["NEEDS_PROVIDER", "AUTO_CLEAR"]]),
-        "recently_resolved": len([r for r in all_refills if r.state == "PATIENT_NOTIFIED"])
+        "needs_review": len([r for r in active_refills if r.state == "PROVIDER_REVIEW"]),
+        "needs_info": len([r for r in active_refills if r.state == "INFO_GATHERING" or (r.state == "TRIAGED" and r.lane == "NEEDS_INFO")]),
+        "ready_for_provider": len([r for r in active_refills if r.state == "TRIAGED" and r.lane in ["NEEDS_PROVIDER", "AUTO_CLEAR"]]),
+        "recently_resolved": len(resolved_today)
     }
 
-    urgent_count = len([r for r in all_refills if getattr(r, "priority", "NORMAL") == "URGENT"])
-    stalled_count = len([r for r in all_refills if getattr(r, "is_stalled", False)])
-    sla_breached_count = len([r for r in all_refills if getattr(r, "sla_status", "ON_TRACK") == "BREACHED"])
-    prior_auth_count = len([r for r in all_refills if getattr(r, "prior_auth_status", "NOT_REQUIRED") == "PA_REQUIRED"])
+    urgent_count = len([r for r in active_refills if getattr(r, "priority", "NORMAL") == "URGENT"])
+    stalled_count = len([r for r in active_refills if getattr(r, "is_stalled", False)])
+    sla_breached_count = len([r for r in active_refills if getattr(r, "sla_status", "ON_TRACK") == "BREACHED"])
+    prior_auth_count = len([r for r in active_refills if getattr(r, "prior_auth_status", "NOT_REQUIRED") == "PA_REQUIRED"])
 
     return DashboardMetrics(
         active_refills=len(active_refills),

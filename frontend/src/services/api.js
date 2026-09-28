@@ -24,11 +24,23 @@ function saveStoredRefills(list) {
   }
 }
 
+function isRefillResolved(r) {
+  return Boolean(
+    r.state === 'PATIENT_NOTIFIED' ||
+    r.state === 'CONFIRMED' ||
+    r.provider_decision === 'DENY' ||
+    r.provider_decision === 'APPROVE' ||
+    r.appointment_scheduled ||
+    r.owner === 'Completed' ||
+    r.owner === 'Closed'
+  );
+}
+
 function calculateClientMetrics(refills) {
-  const active = refills.filter(r => r.state !== 'PATIENT_NOTIFIED');
-  const needsProvider = refills.filter(r => r.lane === 'NEEDS_PROVIDER' && r.state !== 'PATIENT_NOTIFIED');
-  const needsInfo = refills.filter(r => r.lane === 'NEEDS_INFO' && r.state !== 'PATIENT_NOTIFIED');
-  const resolved = refills.filter(r => r.state === 'PATIENT_NOTIFIED');
+  const resolved = refills.filter(isRefillResolved);
+  const active = refills.filter(r => !isRefillResolved(r));
+  const needsProvider = active.filter(r => r.lane === 'NEEDS_PROVIDER' || r.lane === 'AUTO_CLEAR');
+  const needsInfo = active.filter(r => r.lane === 'NEEDS_INFO' || r.state === 'INFO_GATHERING');
   
   return {
     active_refills: active.length,
@@ -37,15 +49,15 @@ function calculateClientMetrics(refills) {
     resolved_today: resolved.length,
     avg_resolution_time: '2h 18m',
     queue_counts: {
-      needs_review: refills.filter(r => r.state === 'PROVIDER_REVIEW').length,
-      needs_info: refills.filter(r => r.state === 'INFO_GATHERING').length,
-      ready_for_provider: refills.filter(r => r.state === 'TRIAGED' && r.lane === 'NEEDS_PROVIDER').length,
+      needs_review: active.filter(r => r.state === 'PROVIDER_REVIEW').length,
+      needs_info: active.filter(r => r.state === 'INFO_GATHERING' || (r.state === 'TRIAGED' && r.lane === 'NEEDS_INFO')).length,
+      ready_for_provider: active.filter(r => r.state === 'TRIAGED' && (r.lane === 'NEEDS_PROVIDER' || r.lane === 'AUTO_CLEAR')).length,
       recently_resolved: resolved.length
     },
-    urgent_count: refills.filter(r => r.priority === 'URGENT').length,
-    stalled_count: refills.filter(r => r.is_stalled).length,
-    sla_breached_count: refills.filter(r => r.sla_status === 'BREACHED').length,
-    prior_auth_count: refills.filter(r => r.prior_auth_required && r.prior_auth_status === 'PA_REQUIRED').length
+    urgent_count: active.filter(r => r.priority === 'URGENT').length,
+    stalled_count: active.filter(r => r.is_stalled).length,
+    sla_breached_count: active.filter(r => r.sla_status === 'BREACHED').length,
+    prior_auth_count: active.filter(r => r.prior_auth_required && r.prior_auth_status === 'PA_REQUIRED').length
   };
 }
 
