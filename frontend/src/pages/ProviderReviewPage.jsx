@@ -14,8 +14,7 @@ import {
   RefreshCw,
   Send,
   FileCheck2,
-  ShieldAlert,
-  AlertCircle
+  ShieldAlert
 } from 'lucide-react';
 import { api } from '../services/api';
 import DecisionModal from '../components/DecisionModal';

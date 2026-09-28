@@ -50,19 +50,12 @@ export default function LandingPage() {
           {/* CTAs */}
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <button
-              onClick={() => navigate('/dashboard')}
-              className="px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm tracking-wide shadow-md shadow-blue-500/25 flex items-center gap-2 transition cursor-pointer"
-            >
-              <span>Launch Dashboard</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
               onClick={() => navigate('/login')}
-              className="px-7 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm tracking-wide border border-slate-300 shadow-2xs hover:border-blue-400 flex items-center gap-2 transition cursor-pointer"
+              className="px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm tracking-wide shadow-lg shadow-blue-500/25 flex items-center gap-2.5 transition transform hover:-translate-y-0.5 cursor-pointer"
             >
-              <LogIn className="w-4 h-4 text-blue-600" />
+              <LogIn className="w-4 h-4" />
               <span>Sign In to Portal</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
