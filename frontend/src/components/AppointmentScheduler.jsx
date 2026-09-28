@@ -52,8 +52,24 @@ export default function AppointmentScheduler({ statusData, onAppointmentSchedule
       });
       setSuccessBanner(true);
       setIsRescheduling(false);
+
+      const mergedData = {
+        ...statusData,
+        appointment_scheduled: true,
+        appointment_date: selectedDate,
+        appointment_time: selectedTime,
+        appointment_type: visitType,
+        appointment_notes: notes,
+        status_headline: 'Appointment confirmed',
+        status_explanation: `Your ${visitType} has been scheduled with ${statusData?.assigned_provider || 'Dr. Rao'} for ${selectedDate} at ${selectedTime}. Your ${statusData?.medication || 'prescription'} refill will be reviewed and authorized during this visit.`,
+        next_step: `Join your ${visitType} on ${selectedDate} at ${selectedTime}. A confirmation link has been sent to your portal.`,
+        last_updated: 'Just now',
+        ...(updated?.patient_id ? updated : {}),
+        ...(updated?.refill || {})
+      };
+
       if (onAppointmentScheduled) {
-        onAppointmentScheduled(updated);
+        onAppointmentScheduled(mergedData);
       }
     } catch (err) {
       alert(`Error scheduling appointment: ${err.message}`);

@@ -78,7 +78,7 @@ function handleClientFallback(endpoint, options = {}) {
   }
 
   if (endpoint === '/patient/schedule' && method === 'POST') {
-    const refill = refills.find(r => r.id === body.refill_id || r.patient_id === body.patient_id);
+    const refill = refills.find(r => r.id === body.refill_id || r.patient_id === body.patient_id) || refills[0];
     if (refill) {
       refill.appointment_scheduled = true;
       refill.appointment_date = body.appointment_date;
@@ -86,7 +86,30 @@ function handleClientFallback(endpoint, options = {}) {
       refill.appointment_type = body.appointment_type || 'In-Person Consultation';
       refill.appointment_notes = body.notes;
       saveStoredRefills(refills);
-      return { success: true, appointment: body, refill };
+
+      return {
+        refill_id: refill.id,
+        patient_id: refill.patient_id,
+        patient_name: refill.patient_name,
+        medication: refill.medication,
+        dosage: refill.dosage,
+        status_headline: 'Appointment confirmed',
+        status_explanation: `Your ${body.appointment_type || 'consultation'} has been scheduled with ${refill.assigned_provider || 'Dr. Rao'} for ${body.appointment_date} at ${body.appointment_time}. Your ${refill.medication} refill will be reviewed and authorized during this visit.`,
+        next_step: `Join your ${body.appointment_type || 'consultation'} on ${body.appointment_date} at ${body.appointment_time}. A confirmation link has been sent to your portal.`,
+        last_updated: 'Just now',
+        is_confirmed: false,
+        state: refill.state || 'DECIDED',
+        provider_decision: refill.provider_decision || 'NEEDS_VISIT',
+        assigned_provider: refill.assigned_provider || 'Dr. Rao',
+        provider_note: refill.provider_note || null,
+        appointment_scheduled: true,
+        appointment_date: body.appointment_date,
+        appointment_time: body.appointment_time,
+        appointment_type: body.appointment_type || 'In-Person Consultation',
+        appointment_notes: body.notes,
+        insurance_provider: refill.insurance_provider || 'Blue Cross Blue Shield',
+        prior_auth_status: refill.prior_auth_status || 'NOT_REQUIRED'
+      };
     }
     return { success: true };
   }

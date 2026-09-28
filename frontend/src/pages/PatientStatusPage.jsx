@@ -62,6 +62,22 @@ export default function PatientStatusPage() {
     }
   };
 
+  const handleAppointmentScheduled = (updated) => {
+    setStatusData(prev => ({
+      ...prev,
+      ...updated,
+      appointment_scheduled: true,
+      appointment_date: updated?.appointment_date || prev?.appointment_date,
+      appointment_time: updated?.appointment_time || prev?.appointment_time,
+      appointment_type: updated?.appointment_type || prev?.appointment_type,
+      status_headline: updated?.status_headline || 'Appointment confirmed',
+      status_explanation: updated?.status_explanation || `Your appointment has been scheduled with ${prev?.assigned_provider || 'Dr. Rao'}.`,
+      next_step: updated?.next_step || 'A confirmation link has been sent to your portal.',
+      last_updated: 'Just now'
+    }));
+    setShowGeneralScheduler(false);
+  };
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
       {/* Patient Portal Header */}
@@ -226,7 +242,7 @@ export default function PatientStatusPage() {
               <div className="pt-2">
                 <AppointmentScheduler
                   statusData={statusData}
-                  onAppointmentScheduled={(updated) => setStatusData(updated)}
+                  onAppointmentScheduled={handleAppointmentScheduled}
                 />
               </div>
             )}
@@ -247,10 +263,7 @@ export default function PatientStatusPage() {
                 ) : (
                   <AppointmentScheduler
                     statusData={statusData}
-                    onAppointmentScheduled={(updated) => {
-                      setStatusData(updated);
-                      setShowGeneralScheduler(false);
-                    }}
+                    onAppointmentScheduled={handleAppointmentScheduled}
                   />
                 )}
               </div>

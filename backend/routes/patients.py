@@ -17,6 +17,13 @@ def build_patient_status_response(refill: RefillRequest) -> PatientStatusRespons
             "They will notify you when it is ready for pickup or delivery."
         )
         next_step = f"Contact {refill.pharmacy_name} at {refill.pharmacy_phone} or check their mobile app for pickup readiness."
+    elif refill.appointment_scheduled:
+        status_headline = "Appointment confirmed"
+        status_explanation = (
+            f"Your {refill.appointment_type or 'consultation'} has been scheduled with {refill.assigned_provider or 'Dr. Rao'} "
+            f"for {refill.appointment_date} at {refill.appointment_time}. Your {refill.medication} {refill.dosage} refill will be reviewed and authorized during this visit."
+        )
+        next_step = f"Join your {refill.appointment_type or 'consultation'} on {refill.appointment_date} at {refill.appointment_time}. A confirmation link has been sent to your portal."
     elif refill.state == "SENT_TO_PHARMACY":
         status_headline = "Prescription sent to pharmacy"
         status_explanation = f"Your provider approved your refill. The prescription has been sent electronically to {refill.pharmacy_name}."
@@ -26,17 +33,9 @@ def build_patient_status_response(refill: RefillRequest) -> PatientStatusRespons
         status_explanation = "Your clinician reviewed this refill request and determined a clinical follow-up is necessary."
         next_step = "Please call our office to discuss alternative therapies or schedule a consultation."
     elif refill.state == "DECIDED" and refill.provider_decision == "NEEDS_VISIT":
-        if refill.appointment_scheduled:
-            status_headline = "Appointment confirmed"
-            status_explanation = (
-                f"Your {refill.appointment_type or 'consultation'} has been scheduled with {refill.assigned_provider or 'Dr. Rao'} "
-                f"for {refill.appointment_date} at {refill.appointment_time}. Your {refill.medication} {refill.dosage} refill will be reviewed and authorized during this visit."
-            )
-            next_step = f"Join your {refill.appointment_type or 'consultation'} on {refill.appointment_date} at {refill.appointment_time}. A confirmation link has been sent to your portal."
-        else:
-            status_headline = "Office visit requested"
-            status_explanation = "Your provider requires an in-person or telehealth visit before refilling this prescription."
-            next_step = "Please select a date and time below to schedule your appointment with your doctor."
+        status_headline = "Office visit requested"
+        status_explanation = "Your provider requires an in-person or telehealth visit before refilling this prescription."
+        next_step = "Please select a date and time below to schedule your appointment with your doctor."
     elif refill.prior_auth_status == "PA_REQUIRED":
         status_headline = "Awaiting insurance coverage approval"
         status_explanation = f"Your clinic is submitting required Prior Authorization paperwork to your insurance plan ({refill.insurance_provider or 'your insurance'}) so your medication is covered."
