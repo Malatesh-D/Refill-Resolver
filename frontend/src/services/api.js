@@ -118,33 +118,35 @@ function handleClientFallback(endpoint, options = {}) {
     const patientId = endpoint.replace('/patient/status/', '').split('?')[0].trim();
     const refill = refills.find(r => (r.patient_id || '').toLowerCase() === patientId.toLowerCase()) || refills[0] || {};
     
-    const isConfirmed = refill.state === 'CONFIRMED' || refill.state === 'PATIENT_NOTIFIED';
+    const isDenied = refill.provider_decision === 'DENY';
+    const isConfirmed = !isDenied && (refill.state === 'CONFIRMED' || refill.state === 'PATIENT_NOTIFIED');
     let statusHeadline = 'Waiting for provider review';
     let statusExplanation = `Your refill request for ${refill.medication || 'your medication'} is currently being reviewed by ${refill.assigned_provider || 'Dr. Rao'}.`;
     let nextStep = `Contact ${refill.pharmacy_name || 'your pharmacy'} at ${refill.pharmacy_phone || 'our office'} for updates.`;
 
-    if (isConfirmed) {
+    if (isDenied) {
+      statusHeadline = 'Prescription renewal not approved';
+      statusExplanation = `Your clinician (${refill.assigned_provider || 'Dr. Rao'}) reviewed this refill request and determined that this prescription cannot be renewed without an updated clinical evaluation.`;
+      if (refill.provider_note) {
+        statusExplanation += ` Doctor's note: "${refill.provider_note}"`;
+      }
+      nextStep = `Please call our office or schedule a consultation with ${refill.assigned_provider || 'Dr. Rao'} to discuss safe renewal or alternative therapies.`;
+    } else if (isConfirmed) {
       statusHeadline = 'Refill confirmed';
       statusExplanation = `Your prescription has been confirmed at ${refill.pharmacy_name || 'your pharmacy'}. They will notify you when it is ready for pickup or delivery.`;
       nextStep = `Contact ${refill.pharmacy_name || 'your pharmacy'} at ${refill.pharmacy_phone || 'the pharmacy'} for pickup details.`;
+    } else if (refill.appointment_scheduled) {
+      statusHeadline = 'Appointment confirmed';
+      statusExplanation = `Your ${refill.appointment_type || 'consultation'} has been scheduled with ${refill.assigned_provider || 'Dr. Rao'} for ${refill.appointment_date} at ${refill.appointment_time}.`;
+      nextStep = `Join your ${refill.appointment_type || 'consultation'} on ${refill.appointment_date}. A confirmation link has been sent to your portal.`;
     } else if (refill.state === 'SENT_TO_PHARMACY') {
       statusHeadline = 'Prescription sent to pharmacy';
       statusExplanation = `Your provider approved your refill. The prescription has been sent electronically to ${refill.pharmacy_name || 'your pharmacy'}.`;
       nextStep = 'Pharmacy is reviewing and preparing the prescription.';
     } else if (refill.provider_decision === 'NEEDS_VISIT') {
-      if (refill.appointment_scheduled) {
-        statusHeadline = 'Appointment confirmed';
-        statusExplanation = `Your ${refill.appointment_type || 'consultation'} has been scheduled with ${refill.assigned_provider || 'Dr. Rao'} for ${refill.appointment_date} at ${refill.appointment_time}.`;
-        nextStep = `Join your ${refill.appointment_type || 'consultation'} on ${refill.appointment_date}. A confirmation link has been sent to your portal.`;
-      } else {
-        statusHeadline = 'Office visit requested';
-        statusExplanation = 'Your provider requires an in-person or telehealth visit before refilling this prescription.';
-        nextStep = 'Please select a date and time below to schedule your appointment with your doctor.';
-      }
-    } else if (refill.provider_decision === 'DENY') {
-      statusHeadline = 'Prescription renewal not approved';
-      statusExplanation = 'Your clinician reviewed this refill request and determined a clinical follow-up is necessary.';
-      nextStep = 'Please call our office to discuss alternative therapies or schedule a consultation.';
+      statusHeadline = 'Office visit requested';
+      statusExplanation = 'Your provider requires an in-person or telehealth visit before refilling this prescription.';
+      nextStep = 'Please select a date and time below to schedule your appointment with your doctor.';
     } else if (refill.prior_auth_status === 'PA_REQUIRED') {
       statusHeadline = 'Awaiting insurance coverage approval';
       statusExplanation = `Your clinic is submitting required Prior Authorization paperwork to your insurance plan (${refill.insurance_provider || 'your insurance'}) so your medication is covered.`;
@@ -217,9 +219,6 @@ function handleClientFallback(endpoint, options = {}) {
         refill.decided_by = body.decided_by || 'Dr. Rao';
         refill.provider_note = body.note;
         refill.decided_at = new Date().toISOString();
-        refill.state = 'PATIENT_NOTIFIED';
-        refill.blocker_title = 'Resolved';
-        refill.blocker_description = 'Refill authorized and transmitted to pharmacy';
         refill.audit_events = refill.audit_events || [];
         refill.audit_events.push({
           id: Date.now(),
@@ -231,16 +230,45 @@ function handleClientFallback(endpoint, options = {}) {
           to_state: 'DECIDED',
           detail: `Clinical decision: ${body.decision}. ${body.note || ''}`
         });
-        refill.audit_events.push({
-          id: Date.now() + 1,
-          refill_id: id,
-          timestamp: new Date().toISOString(),
-          actor: 'Workflow Engine',
-          action: 'PATIENT_NOTIFIED',
-          from_state: 'CONFIRMED',
-          to_state: 'PATIENT_NOTIFIED',
-          detail: `Patient notified via SMS and portal.`
-        });
+
+        if (body.decision === 'DENY') {
+          refill.state = 'DECIDED';
+          refill.blocker_title = 'Renewal Not Approved';
+          refill.blocker_description = `Prescription renewal denied by ${refill.decided_by}. Patient advised to schedule clinical consultation.`;
+          refill.owner = 'Completed';
+          refill.audit_events.push({
+            id: Date.now() + 1,
+            refill_id: id,
+            timestamp: new Date().toISOString(),
+            actor: 'Workflow Engine',
+            action: 'PATIENT_NOTIFIED',
+            from_state: 'DECIDED',
+            to_state: 'DECIDED',
+            detail: `Patient notified via SMS and portal: Renewal not approved by ${refill.decided_by}.`
+          });
+        } else if (body.decision === 'NEEDS_VISIT') {
+          refill.state = 'DECIDED';
+          refill.blocker_title = 'Clinical Visit Requested';
+          refill.blocker_description = `Dr. ${refill.decided_by} requested consultation before authorizing refill.`;
+          refill.owner = 'Patient';
+        } else {
+          // APPROVE
+          refill.state = 'PATIENT_NOTIFIED';
+          refill.blocker_title = 'Resolved';
+          refill.blocker_description = 'Refill authorized and transmitted to pharmacy';
+          refill.owner = 'Completed';
+          refill.audit_events.push({
+            id: Date.now() + 1,
+            refill_id: id,
+            timestamp: new Date().toISOString(),
+            actor: 'Workflow Engine',
+            action: 'PATIENT_NOTIFIED',
+            from_state: 'CONFIRMED',
+            to_state: 'PATIENT_NOTIFIED',
+            detail: `Patient notified via SMS and portal: Refill authorized.`
+          });
+        }
+
         saveStoredRefills(refills);
         return refill;
       }

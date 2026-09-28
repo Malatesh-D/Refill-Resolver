@@ -110,9 +110,15 @@ export default function RefillDetailPage() {
       setActionLoading(true);
       const updated = await api.recordDecision(id, decType, refill.assigned_provider || 'Dr. Rao', note);
       setShowDecisionModal(false);
+      const isApproved = decType === 'APPROVE';
+      const isDenied = decType === 'DENY';
       setNotificationBanner({
-        type: 'success',
-        text: `Provider decision [${decType}] recorded! Mock pharmacy notified & confirmed.`
+        type: isApproved ? 'success' : isDenied ? 'error' : 'info',
+        text: isApproved
+          ? 'Provider decision [APPROVE] recorded! Electronic prescription authorized and sent to pharmacy.'
+          : isDenied
+          ? 'Provider decision [DENY] recorded. Prescription renewal not authorized; patient notified.'
+          : 'Provider decision [NEEDS_VISIT] recorded. Office consultation requested from patient.'
       });
       await loadData();
     } catch (err) {

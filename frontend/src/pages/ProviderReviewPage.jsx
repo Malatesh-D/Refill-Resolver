@@ -279,17 +279,29 @@ export default function ProviderReviewPage() {
           {/* DECISION ACTION BUTTONS (Section 20) */}
           <div className="pt-6 border-t border-slate-100">
             {isAlreadyDecided ? (
-              <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 text-center">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-                <h4 className="text-base font-bold text-slate-900">
-                  Clinical Decision Recorded: {refill.provider_decision}
+              <div className={`p-6 rounded-xl border text-center ${
+                refill.provider_decision === 'DENY'
+                  ? 'bg-rose-50/60 border-rose-200'
+                  : 'bg-slate-50 border-slate-200'
+              }`}>
+                {refill.provider_decision === 'DENY' ? (
+                  <AlertCircle className="w-8 h-8 text-rose-600 mx-auto mb-2" />
+                ) : (
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+                )}
+                <h4 className={`text-base font-bold ${
+                  refill.provider_decision === 'DENY' ? 'text-rose-950' : 'text-slate-900'
+                }`}>
+                  Clinical Decision Recorded: {refill.provider_decision === 'DENY' ? 'DENIED' : refill.provider_decision}
                 </h4>
                 <p className="text-xs text-slate-500 mt-1">
                   Decided by {refill.decided_by || 'Dr. Rao'} • Current Status: <strong>{refill.state}</strong>
                 </p>
                 {refill.provider_note && (
-                  <div className="mt-3 max-w-lg mx-auto p-3.5 bg-white rounded-lg border border-slate-200 text-xs text-slate-700 italic text-left">
-                    <span className="not-italic font-bold text-slate-900 block text-[11px] mb-1">
+                  <div className={`mt-3 max-w-lg mx-auto p-3.5 bg-white rounded-lg border text-xs text-left italic ${
+                    refill.provider_decision === 'DENY' ? 'border-rose-200 text-rose-950' : 'border-slate-200 text-slate-700'
+                  }`}>
+                    <span className="not-italic font-bold block text-[11px] mb-1">
                       Clinician Message / Note to Patient:
                     </span>
                     "{refill.provider_note}"
@@ -300,7 +312,7 @@ export default function ProviderReviewPage() {
                     to={`/patient/${refill.patient_id}`}
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-xs transition"
                   >
-                    <span>View Patient Confirmation Portal &rarr;</span>
+                    <span>{refill.provider_decision === 'DENY' ? 'View Patient Portal (Refill Denied)' : 'View Patient Confirmation Portal'} &rarr;</span>
                   </Link>
                 </div>
               </div>

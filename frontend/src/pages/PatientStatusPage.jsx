@@ -148,7 +148,9 @@ export default function PatientStatusPage() {
           
           {/* Status Header Banner */}
           <div className={`p-6 text-white ${
-            statusData.is_confirmed
+            statusData.provider_decision === 'DENY'
+              ? 'bg-rose-700'
+              : statusData.is_confirmed
               ? 'bg-emerald-600'
               : statusData.state === 'SENT_TO_PHARMACY'
               ? 'bg-blue-600'
@@ -168,7 +170,12 @@ export default function PatientStatusPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                {statusData.is_confirmed ? (
+                {statusData.provider_decision === 'DENY' ? (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-rose-800 text-xs font-black shadow-xs">
+                    <AlertCircle className="w-4 h-4 text-rose-600" />
+                    NOT APPROVED
+                  </span>
+                ) : statusData.is_confirmed ? (
                   <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-emerald-800 text-xs font-black shadow-xs">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     CONFIRMED
@@ -187,8 +194,18 @@ export default function PatientStatusPage() {
           <div className="p-8 space-y-6">
             
             {/* Primary Status Headline */}
-            <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-              {statusData.is_confirmed ? (
+            <div className={`flex items-start gap-4 p-4 rounded-xl border ${
+              statusData.provider_decision === 'DENY'
+                ? 'bg-rose-50 border-rose-200'
+                : statusData.is_confirmed
+                ? 'bg-emerald-50 border-emerald-200'
+                : 'bg-slate-50 border-slate-200'
+            }`}>
+              {statusData.provider_decision === 'DENY' ? (
+                <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+              ) : statusData.is_confirmed ? (
                 <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
@@ -199,10 +216,14 @@ export default function PatientStatusPage() {
               )}
 
               <div>
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className={`text-lg font-bold ${
+                  statusData.provider_decision === 'DENY' ? 'text-rose-950' : 'text-slate-900'
+                }`}>
                   {statusData.status_headline}
                 </h3>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                <p className={`text-xs mt-1 leading-relaxed ${
+                  statusData.provider_decision === 'DENY' ? 'text-rose-800' : 'text-slate-600'
+                }`}>
                   {statusData.status_explanation}
                 </p>
               </div>
@@ -210,15 +231,29 @@ export default function PatientStatusPage() {
 
             {/* Doctor's Personal Clinical Message to Patient */}
             {statusData.provider_note && (
-              <div className="bg-emerald-50/90 border-2 border-emerald-300 rounded-xl p-4 text-xs text-emerald-950 shadow-xs">
-                <div className="flex items-center gap-2 mb-2 text-emerald-900 font-bold">
-                  <Stethoscope className="w-4 h-4 text-emerald-700" />
+              <div className={`border-2 rounded-xl p-4 text-xs shadow-xs ${
+                statusData.provider_decision === 'DENY'
+                  ? 'bg-rose-50/90 border-rose-300 text-rose-950'
+                  : 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
+              }`}>
+                <div className={`flex items-center gap-2 mb-2 font-bold ${
+                  statusData.provider_decision === 'DENY' ? 'text-rose-900' : 'text-emerald-900'
+                }`}>
+                  <Stethoscope className={`w-4 h-4 ${
+                    statusData.provider_decision === 'DENY' ? 'text-rose-700' : 'text-emerald-700'
+                  }`} />
                   <span className="text-sm">Personal Note from {statusData.assigned_provider || 'Dr. Rao'} (Prescribing Clinician):</span>
                 </div>
-                <div className="bg-white p-3.5 rounded-lg border border-emerald-200 text-slate-800 text-xs leading-relaxed italic font-medium">
+                <div className={`p-3.5 rounded-lg border text-xs leading-relaxed italic font-medium bg-white ${
+                  statusData.provider_decision === 'DENY'
+                    ? 'border-rose-200 text-rose-950'
+                    : 'border-emerald-200 text-slate-800'
+                }`}>
                   "{statusData.provider_note}"
                 </div>
-                <div className="mt-2 text-[10px] text-emerald-700 font-semibold flex items-center justify-between">
+                <div className={`mt-2 text-[10px] font-semibold flex items-center justify-between ${
+                  statusData.provider_decision === 'DENY' ? 'text-rose-700' : 'text-emerald-700'
+                }`}>
                   <span>✓ Verified Clinical Sign-off</span>
                   <span>Direct Doctor Communication</span>
                 </div>
@@ -230,7 +265,11 @@ export default function PatientStatusPage() {
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 What Happens Next?
               </h4>
-              <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-200 text-xs text-slate-800 leading-relaxed font-medium">
+              <div className={`p-4 rounded-xl border text-xs leading-relaxed font-medium ${
+                statusData.provider_decision === 'DENY'
+                  ? 'bg-rose-50/80 border-rose-200 text-rose-900'
+                  : 'bg-blue-50/60 border-blue-200 text-slate-800'
+              }`}>
                 {statusData.next_step}
               </div>
             </div>

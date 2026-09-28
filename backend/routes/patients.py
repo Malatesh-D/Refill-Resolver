@@ -8,9 +8,19 @@ from services.audit_service import log_audit_event
 router = APIRouter(prefix="/patient", tags=["Patient"])
 
 def build_patient_status_response(refill: RefillRequest) -> PatientStatusResponse:
-    is_confirmed = refill.state in ["CONFIRMED", "PATIENT_NOTIFIED"]
+    is_denied = refill.provider_decision == "DENY"
+    is_confirmed = (refill.state in ["CONFIRMED", "PATIENT_NOTIFIED"]) and not is_denied
     
-    if is_confirmed:
+    if is_denied:
+        status_headline = "Prescription renewal not approved"
+        status_explanation = (
+            f"Your clinician ({refill.assigned_provider or 'your doctor'}) reviewed this refill request "
+            f"and determined that this prescription cannot be renewed without an updated clinical evaluation."
+        )
+        if refill.provider_note:
+            status_explanation += f" Doctor's note: \"{refill.provider_note}\""
+        next_step = f"Please contact our office or schedule a consultation with {refill.assigned_provider or 'Dr. Rao'} to discuss alternative therapies or safe renewal."
+    elif is_confirmed:
         status_headline = "Refill confirmed"
         status_explanation = (
             f"Your pharmacy ({refill.pharmacy_name}) has received the refill authorization for {refill.medication} {refill.dosage}. "
@@ -28,10 +38,6 @@ def build_patient_status_response(refill: RefillRequest) -> PatientStatusRespons
         status_headline = "Prescription sent to pharmacy"
         status_explanation = f"Your provider approved your refill. The prescription has been sent electronically to {refill.pharmacy_name}."
         next_step = "Pharmacy is reviewing and preparing the prescription."
-    elif refill.state == "DECIDED" and refill.provider_decision == "DENY":
-        status_headline = "Prescription renewal not approved"
-        status_explanation = "Your clinician reviewed this refill request and determined a clinical follow-up is necessary."
-        next_step = "Please call our office to discuss alternative therapies or schedule a consultation."
     elif refill.state == "DECIDED" and refill.provider_decision == "NEEDS_VISIT":
         status_headline = "Office visit requested"
         status_explanation = "Your provider requires an in-person or telehealth visit before refilling this prescription."

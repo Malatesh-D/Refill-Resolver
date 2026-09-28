@@ -448,6 +448,20 @@ def record_provider_decision(
                 rx_number=f"RX-{refill.id.replace('REF-', '')}01",
                 message=f"Dispense authorization acknowledged by {refill.pharmacy_name}."
             )
+    elif decision_norm == "DENY":
+        refill.blocker_title = "Renewal Not Approved"
+        refill.blocker_description = f"Prescription renewal denied by {refill.decided_by}. Patient advised to schedule clinical consultation."
+        refill.owner = "Completed"
+        refill.patient_sms_preview = f"Refill Resolve update for {refill.patient_name}: Your {refill.medication} renewal was not authorized by {refill.decided_by}. Please contact our clinic to discuss alternative care."
+        db.add(refill)
+        db.commit()
+    elif decision_norm == "NEEDS_VISIT":
+        refill.blocker_title = "Office Visit Requested"
+        refill.blocker_description = f"Clinician requested consultation prior to renewal. Awaiting appointment booking."
+        refill.owner = "Patient"
+        refill.patient_sms_preview = f"Refill Resolve update for {refill.patient_name}: Dr. {refill.decided_by.replace('Dr. ', '')} requested a consultation before renewing your {refill.medication}. Please tap your portal link to schedule."
+        db.add(refill)
+        db.commit()
 
     db.refresh(refill)
     return serialize_refill(refill)
