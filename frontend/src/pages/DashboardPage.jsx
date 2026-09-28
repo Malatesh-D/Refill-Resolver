@@ -17,7 +17,8 @@ import {
   Stethoscope,
   Edit3,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  AlertCircle
 } from 'lucide-react';
 import { api } from '../services/api';
 import KPIStats from '../components/KPIStats';
